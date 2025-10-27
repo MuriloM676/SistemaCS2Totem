@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function CadastroPage() {
@@ -12,6 +12,27 @@ export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
+
+  // useEffect para redirecionar após 5 segundos
+  useEffect(() => {
+    if (senhaGerada) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            handleNovaSenha();
+            return 5;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    } else {
+      setCountdown(5);
+    }
+  }, [senhaGerada]);
 
   const formatData = (value: string) => {
     // Remove tudo que não é número
@@ -91,12 +112,15 @@ export default function CadastroPage() {
             <p className="text-xl text-gray-600 mb-8">
               Aguarde ser chamado no painel
             </p>
+            <p className="text-2xl text-blue-600 font-semibold">
+              Nova senha em {countdown} segundos...
+            </p>
           </div>
           <button
             onClick={handleNovaSenha}
             className="bg-blue-600 hover:bg-blue-700 text-white text-2xl font-bold py-6 px-12 rounded-2xl transition-colors w-full"
           >
-            Gerar Nova Senha
+            Gerar Nova Senha Agora
           </button>
         </div>
       </div>

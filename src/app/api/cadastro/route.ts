@@ -7,6 +7,46 @@ const cadastroSchema = z.object({
   dataNascimento: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Data de nascimento deve estar no formato DD/MM/AAAA'),
 });
 
+// Função para validar data de nascimento
+function validarDataNascimento(dataStr: string): { valida: boolean; erro?: string } {
+  const [dia, mes, ano] = dataStr.split('/').map(Number);
+  
+  // Verificar valores básicos
+  if (mes < 1 || mes > 12) {
+    return { valida: false, erro: 'Mês inválido' };
+  }
+  
+  if (dia < 1 || dia > 31) {
+    return { valida: false, erro: 'Dia inválido' };
+  }
+  
+  // Verificar ano (deve ser entre 1900 e ano atual)
+  const anoAtual = new Date().getFullYear();
+  if (ano < 1900 || ano > anoAtual) {
+    return { valida: false, erro: 'Ano inválido' };
+  }
+  
+  // Criar data e verificar se é válida
+  const data = new Date(ano, mes - 1, dia);
+  
+  if (data.getDate() !== dia || data.getMonth() !== mes - 1 || data.getFullYear() !== ano) {
+    return { valida: false, erro: 'Data inválida' };
+  }
+  
+  // Verificar se não é data futura
+  if (data > new Date()) {
+    return { valida: false, erro: 'Data de nascimento não pode ser futura' };
+  }
+  
+  // Verificar idade mínima (não pode ser maior que 150 anos)
+  const idade = anoAtual - ano;
+  if (idade > 150) {
+    return { valida: false, erro: 'Data de nascimento muito antiga' };
+  }
+  
+  return { valida: true };
+}
+
 // Função para gerar número de senha sequencial
 async function gerarNumeroSenha(): Promise<string> {
   const hoje = new Date();
@@ -28,6 +68,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = cadastroSchema.parse(body);
+
+    // Validar data de nascimento
+    const validacaoData = validarDataNascimento(validatedData.dataNascimento);
+    if (!validacaoData.valida) {
+      return NextResponse.json(
+        { success: false, error: validacaoData.erro },
+        { status: 400 }
+      );
+    }
 
     // Criar novo paciente
     const paciente = await prisma.paciente.create({

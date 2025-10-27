@@ -21,12 +21,17 @@ export default function GuichePage() {
   const [loading, setLoading] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [senhas, setSenhas] = useState<Senha[]>([]);
+  const [historico, setHistorico] = useState<Senha[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authenticated) {
       carregarSenhas();
-      const interval = setInterval(carregarSenhas, 5000); // Atualiza a cada 5 segundos
+      carregarHistorico();
+      const interval = setInterval(() => {
+        carregarSenhas();
+        carregarHistorico();
+      }, 5000); // Atualiza a cada 5 segundos
       return () => clearInterval(interval);
     }
   }, [authenticated]);
@@ -70,6 +75,18 @@ export default function GuichePage() {
     }
   };
 
+  const carregarHistorico = async () => {
+    try {
+      const response = await fetch('/api/senhas?status=finalizado&limit=10');
+      const data = await response.json();
+      if (data.success) {
+        setHistorico(data.senhas);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar histórico:', err);
+    }
+  };
+
   const chamarSenha = async (id: number) => {
     try {
       const response = await fetch(`/api/senhas/${id}/chamar`, {
@@ -82,6 +99,7 @@ export default function GuichePage() {
         // Emitir evento via WebSocket
         emitSenhaChamada(data.senha);
         carregarSenhas();
+        carregarHistorico();
       }
     } catch (err) {
       console.error('Erro ao chamar senha:', err);
@@ -98,6 +116,7 @@ export default function GuichePage() {
 
       if (data.success) {
         carregarSenhas();
+        carregarHistorico();
       }
     } catch (err) {
       console.error('Erro ao finalizar atendimento:', err);
@@ -236,6 +255,64 @@ export default function GuichePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-6 mt-6">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">
+            Histórico de Atendimentos
+          </h2>
+
+          {historico.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 text-lg">
+              Nenhum atendimento finalizado ainda
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                      Senha
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                      Paciente
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                      Criado
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historico.map((senha) => (
+                    <tr
+                      key={senha.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-4 px-4">
+                        <span className="bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-lg">
+                          {senha.numero}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-800">
+                        {senha.paciente?.nome || 'Sem nome'}
+                      </td>
+                      <td className="py-4 px-4 text-gray-600">
+                        {new Date(senha.criadoEm).toLocaleString('pt-BR')}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                          Finalizado
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

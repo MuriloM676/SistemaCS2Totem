@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || 'aguardando';
+    const limit = searchParams.get('limit');
 
     const senhas = await prisma.senha.findMany({
       where: {
@@ -14,8 +15,9 @@ export async function GET(request: NextRequest) {
         paciente: true,
       },
       orderBy: {
-        criadoEm: 'asc',
+        criadoEm: status === 'finalizado' ? 'desc' : 'asc',
       },
+      take: limit ? parseInt(limit) : undefined,
     });
 
     return NextResponse.json({ success: true, senhas });

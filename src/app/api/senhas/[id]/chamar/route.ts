@@ -8,6 +8,7 @@ export async function POST(
   try {
     const id = parseInt(params.id);
 
+    // Atualiza para "chamando"
     const senha = await prisma.senha.update({
       where: { id },
       data: {
@@ -18,6 +19,20 @@ export async function POST(
         paciente: true,
       },
     });
+
+    // Após 10 segundos, muda automaticamente para "finalizado"
+    setTimeout(async () => {
+      try {
+        await prisma.senha.update({
+          where: { id },
+          data: {
+            status: 'finalizado',
+          },
+        });
+      } catch (err) {
+        console.error('Erro ao finalizar senha automaticamente:', err);
+      }
+    }, 10000); // 10 segundos
 
     return NextResponse.json({ success: true, senha });
   } catch (error) {
