@@ -7,21 +7,24 @@ export default function CadastroPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     nome: '',
-    cpf: '',
-    telefone: '',
+    dataNascimento: '',
   });
   const [loading, setLoading] = useState(false);
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const formatCPF = (value: string) => {
+  const formatData = (value: string) => {
+    // Remove tudo que não é número
     const numbers = value.replace(/\D/g, '');
-    return numbers.slice(0, 11);
-  };
-
-  const formatTelefone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    return numbers.slice(0, 11);
+    
+    // Formata como DD/MM/AAAA
+    if (numbers.length <= 2) {
+      return numbers;
+    } else if (numbers.length <= 4) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    } else {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +45,7 @@ export default function CadastroPage() {
 
       if (data.success) {
         setSenhaGerada(data.senha);
-        setFormData({ nome: '', cpf: '', telefone: '' });
+        setFormData({ nome: '', dataNascimento: '' });
       } else {
         setError(data.error || 'Erro ao gerar senha');
       }
@@ -136,46 +139,25 @@ export default function CadastroPage() {
 
           <div>
             <label className="block text-2xl font-semibold mb-4 text-gray-700">
-              CPF
+              Data de Nascimento
             </label>
             <input
               type="text"
-              value={formData.cpf}
-              onChange={(e) =>
-                setFormData({ ...formData, cpf: formatCPF(e.target.value) })
-              }
-              className="w-full px-6 py-6 text-2xl border-4 border-gray-300 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="Digite apenas números"
-              required
-              disabled={loading}
-              maxLength={11}
-            />
-            <p className="text-gray-500 mt-2 text-lg">
-              {formData.cpf.length}/11 dígitos
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-2xl font-semibold mb-4 text-gray-700">
-              Telefone
-            </label>
-            <input
-              type="text"
-              value={formData.telefone}
+              value={formData.dataNascimento}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  telefone: formatTelefone(e.target.value),
+                  dataNascimento: formatData(e.target.value),
                 })
               }
               className="w-full px-6 py-6 text-2xl border-4 border-gray-300 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="Digite apenas números"
+              placeholder="DD/MM/AAAA"
               required
               disabled={loading}
-              maxLength={11}
+              maxLength={10}
             />
             <p className="text-gray-500 mt-2 text-lg">
-              {formData.telefone.length}/11 dígitos
+              Formato: DD/MM/AAAA
             </p>
           </div>
 
@@ -187,13 +169,6 @@ export default function CadastroPage() {
             {loading ? 'Gerando...' : 'Gerar Senha'}
           </button>
         </form>
-
-        <button
-          onClick={() => router.push('/')}
-          className="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xl font-semibold py-4 px-6 rounded-2xl transition-colors"
-        >
-          Voltar ao Menu
-        </button>
       </div>
     </div>
   );

@@ -4,8 +4,7 @@ import { z } from 'zod';
 
 const cadastroSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  cpf: z.string().length(11, 'CPF deve ter 11 dígitos'),
-  telefone: z.string().min(10, 'Telefone inválido').max(15, 'Telefone inválido'),
+  dataNascimento: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Data de nascimento deve estar no formato DD/MM/AAAA'),
 });
 
 // Função para gerar número de senha sequencial
@@ -30,26 +29,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = cadastroSchema.parse(body);
 
-    // Verificar se paciente já existe
-    let paciente = await prisma.paciente.findUnique({
-      where: { cpf: validatedData.cpf },
+    // Criar novo paciente
+    const paciente = await prisma.paciente.create({
+      data: validatedData,
     });
-
-    // Se não existe, criar novo paciente
-    if (!paciente) {
-      paciente = await prisma.paciente.create({
-        data: validatedData,
-      });
-    } else {
-      // Atualizar dados do paciente se já existe
-      paciente = await prisma.paciente.update({
-        where: { cpf: validatedData.cpf },
-        data: {
-          nome: validatedData.nome,
-          telefone: validatedData.telefone,
-        },
-      });
-    }
 
     // Gerar nova senha
     const numeroSenha = await gerarNumeroSenha();
